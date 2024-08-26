@@ -1,13 +1,13 @@
+'use client'
 import { useToast } from '@/components/ui/use-toast'
-import { usePathname,useRouter } from 'next/navigation'
-// import {  } from 'next/router'
-import React, { useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import React from 'react'
+import { useEffect, useState } from 'react'
 import { useChatContext } from './use-chat-context'
-import { onToggleRealtime } from '@/actions/conversation'
+import { onGetConversationMode, onToggleRealtime } from '@/actions/conversation'
+import { useClerk } from '@clerk/nextjs'
 
-type Props = {}
-
-const useSideBar = (props: Props) => {
+const useSideBar = () => {
     const [expand, setExpand] = useState<boolean | undefined>(undefined)
     const router = useRouter()
     const pathname = usePathname()
@@ -34,6 +34,29 @@ const useSideBar = (props: Props) => {
             console.log(error)
         }
     }
+
+    const onGetCurrentMode = async () => {
+        setLoading(true)
+        const mode = await onGetConversationMode(chatRoom!)
+        if (mode) {
+            setRealtime(mode.live)
+            setLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        if (chatRoom) {
+            onGetCurrentMode()
+        }
+    }, [chatRoom])
+
+    const page = pathname.split('/').pop()
+    const { signOut } = useClerk()
+
+    const onSignOut = () => signOut(() => router.push('/'))
+
+    const onExpand = () => setExpand((prev) => !prev)
+
     return {
         expand,
         onExpand,
